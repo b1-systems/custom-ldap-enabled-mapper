@@ -16,7 +16,7 @@ for use with [the corresponding developer deployment](https://github.com/b1-syst
 The code in this example is heavily based on Wiktor Nastał's "Keycloak LDAP
 Custom Enabled Value Mapper", retrieved from GitHub under the terms and
 conditions of the Apache License Version 2.0 (see [LICENSE.txt](LICENSE.txt)
-for the text of the license). The URL of the original project is:  
+for the text of the license). The URL of the original project is:
 
 * <https://github.com/Nithe14/keycloak-custom-ldap-enabled-mapper/>
 

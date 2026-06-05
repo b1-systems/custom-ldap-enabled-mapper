@@ -1,3 +1,18 @@
+/* Copyright 2026  B1 Systems GmbH <info@b1-systems.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * */
+
 package de.b1systems.keycloak.ldap.enabled;
 
 import org.jboss.logging.Logger;
@@ -11,96 +26,96 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 
 public class CustomLdapEnabledMapper extends AbstractLDAPStorageMapper {
-	private static final Logger LOG = Logger.getLogger(CustomLdapEnabledMapper.class);
-	public static final String ALWAYS_READ_VALUE_FROM_LDAP = "always.read.value.from.ldap";
-	public static final String LDAP_ATTRIBUTE = "ldap.attribute";
-	public static final String ENABLED_VALUE = "enabled.ldap.value";
+    private static final Logger LOG = Logger.getLogger(CustomLdapEnabledMapper.class);
+    public static final String ALWAYS_READ_VALUE_FROM_LDAP = "always.read.value.from.ldap";
+    public static final String LDAP_ATTRIBUTE = "ldap.attribute";
+    public static final String ENABLED_VALUE = "enabled.ldap.value";
 
-	public CustomLdapEnabledMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
-		super(mapperModel, ldapProvider);
-	}
+    public CustomLdapEnabledMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
+        super(mapperModel, ldapProvider);
+    }
 
-	@Override
-	public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-		String ldapAttrName = getLdapAttributeName();
-		String ldapAttrValue = ldapUser.getAttributeAsString(ldapAttrName);
-		String enabledValue = getLdapEnabledValue();
+    @Override
+    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
+        String ldapAttrName = getLdapAttributeName();
+        String ldapAttrValue = ldapUser.getAttributeAsString(ldapAttrName);
+        String enabledValue = getLdapEnabledValue();
 
-		boolean isEnabled = (ldapAttrValue != null && ldapAttrValue.equalsIgnoreCase(enabledValue));
+        boolean isEnabled = (ldapAttrValue != null && ldapAttrValue.equalsIgnoreCase(enabledValue));
 
-		if (ldapAttrValue == null) {
-			CustomLdapEnabledMapper.LOG.warnf("Failed to enable user: %s, LDAP attribute value is null", user.getUsername());
-		}
+        if (ldapAttrValue == null) {
+            CustomLdapEnabledMapper.LOG.warnf("Failed to enable user: %s, LDAP attribute value is null", user.getUsername());
+        }
 
-		CustomLdapEnabledMapper.LOG.debugf(
-			"User: %s is enabled: %s, " +
-			"LDAP attribute name: %s, " +
-			"LDAP attribute value: %s, " +
-			"Expected value: %s",
-			user.getUsername(),
-			isEnabled,
-			ldapAttrName,
-			ldapAttrValue,
-			enabledValue
-		);
+        CustomLdapEnabledMapper.LOG.debugf(
+            "User: %s is enabled: %s, " +
+            "LDAP attribute name: %s, " +
+            "LDAP attribute value: %s, " +
+            "Expected value: %s",
+            user.getUsername(),
+            isEnabled,
+            ldapAttrName,
+            ldapAttrValue,
+            enabledValue
+        );
 
-		user.setEnabled(isEnabled);
-	}
+        user.setEnabled(isEnabled);
+    }
 
-	@Override
-	public UserModel proxy(
-		LDAPObject ldapUser,
-		UserModel delegate,
-		RealmModel realm
-	) {
-		final String ldapAttrName = getLdapAttributeName();
-		final String ldapAttrValue = ldapUser.getAttributeAsString(ldapAttrName);
-		final String enabledValue = getLdapEnabledValue();
-		boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(
-			mapperModel,
-			ALWAYS_READ_VALUE_FROM_LDAP
-		);
+    @Override
+    public UserModel proxy(
+        LDAPObject ldapUser,
+        UserModel delegate,
+        RealmModel realm
+    ) {
+        final String ldapAttrName = getLdapAttributeName();
+        final String ldapAttrValue = ldapUser.getAttributeAsString(ldapAttrName);
+        final String enabledValue = getLdapEnabledValue();
+        boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(
+            mapperModel,
+            ALWAYS_READ_VALUE_FROM_LDAP
+        );
 
-		if (isAlwaysReadValueFromLDAP) {
-			delegate = new UserModelDelegate(delegate) {
+        if (isAlwaysReadValueFromLDAP) {
+            delegate = new UserModelDelegate(delegate) {
 
-				@Override
-				public boolean isEnabled() {
-					return ldapAttrValue != null && ldapAttrValue.equalsIgnoreCase(enabledValue);
-				}
+                @Override
+                public boolean isEnabled() {
+                    return ldapAttrValue != null && ldapAttrValue.equalsIgnoreCase(enabledValue);
+                }
 
-			};
-		}
+            };
+        }
 
-		return delegate;
-	}
+        return delegate;
+    }
 
-	@Override
-	public void onRegisterUserToLDAP(
-		LDAPObject ldapUser,
-		UserModel localUser,
-		RealmModel realm
-	) {
-		// Not supported
-	}
+    @Override
+    public void onRegisterUserToLDAP(
+        LDAPObject ldapUser,
+        UserModel localUser,
+        RealmModel realm
+    ) {
+        // Not supported
+    }
 
-	@Override
-	public void beforeLDAPQuery(LDAPQuery query) {
-		String ldapAttrName = getLdapAttributeName();
+    @Override
+    public void beforeLDAPQuery(LDAPQuery query) {
+        String ldapAttrName = getLdapAttributeName();
 
-		// Add mapped attribute to returning ldap attributes
-		query.addReturningLdapAttribute(ldapAttrName);
-	}
+        // Add mapped attribute to returning ldap attributes
+        query.addReturningLdapAttribute(ldapAttrName);
+    }
 
-	String getLdapAttributeName() {
-		return mapperModel
-			.getConfig()
-			.getFirst(LDAP_ATTRIBUTE);
-	}
+    String getLdapAttributeName() {
+        return mapperModel
+            .getConfig()
+            .getFirst(LDAP_ATTRIBUTE);
+    }
 
-	String getLdapEnabledValue() {
-		return mapperModel
-			.getConfig()
-			.getFirst(ENABLED_VALUE);
-	}
+    String getLdapEnabledValue() {
+        return mapperModel
+            .getConfig()
+            .getFirst(ENABLED_VALUE);
+    }
 }
